@@ -4,17 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"strings"
-
-	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/sockets"
 )
 
 type serverResponse struct {
@@ -26,7 +20,8 @@ type serverResponse struct {
 
 type Client interface {
 	Pull(image string) error
-	Run(image, cmd string) error
+	Start(id, image string) error
+	Logs(id string) error
 }
 
 type ClientDocker struct {
@@ -63,145 +58,41 @@ func NewDockerClient() (*ClientDocker, error) {
 }
 
 func defaultHTTPClient(host string) (*http.Client, error) {
-	url, err := client.ParseHostURL("http://docker.sock")
-	if err != nil {
-		return nil, err
+	d := new(net.Dialer)
+	x := &http.Transport{
+		DialContext: func(ctx context.Context, net, addr string) (net.Conn, error) {
+			return d.DialContext(ctx, "unix", "/var/run/docker.sock")
+		},
 	}
-	transport := new(http.Transport)
-	sockets.ConfigureTransport(transport, url.Scheme, url.Host)
+
 	return &http.Client{
-		Transport: transport,
+		Transport: x,
 	}, nil
 }
 
-// Pull method enables to pull docker images
-// specified as "image:tag", for example "ubuntu:latest"
-func (dc *ClientDocker) Pull(image string) error {
-	return dc.pull(image)
-}
+// func (dc *ClientDocker) Wait(id string, req any) error {
+// 	//"condition=not-running"
+// 	httpReq, err := dc.buildRequest("POST", "/v1.41/containers/"+id+"/wait", url.Values{}, req)
+// 	if err != nil {
+// 		return err
+// 	}
 
-// composes a pull request over the socket
-func (dc *ClientDocker) pull(image string) error {
+// 	resp, err := dc.doRequest(ctx, httpReq)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	d := new(net.Dialer)
-	x := &http.Transport{
-		DialContext: func(ctx context.Context, net, addr string) (net.Conn, error) {
-			return d.DialContext(ctx, "unix", "/var/run/docker.sock")
-		},
-	}
+// 	_, err = ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	dc.Client = &http.Client{Transport: x}
+// 	if err := json.Unmarshal(bodyBytes, &createResp); err != nil {
+// 		return err
+// 	}
+// 	fmt.Println(resp.Body)
 
-	refs := strings.Split(image, ":")
-	query := url.Values{}
-	query.Set("fromImage", refs[0])
-	query.Set("tag", refs[1])
-
-	var q = struct {
-		AttachStdout bool
-		AttachStderr bool
-	}{
-		AttachStderr: true,
-		AttachStdout: true,
-	}
-
-	// TODO: The "/v1.41" should be replaced to be dynamic
-	req, err := dc.buildRequest("POST", "/v1.41/images/create", query, q)
-	if err != nil {
-		return nil
-	}
-
-	resp, err := dc.doRequest(context.Background(), req)
-	if err != nil {
-		return nil
-	}
-
-	io.Copy(os.Stdout, resp.body)
-	return nil
-}
-
-func (dc *ClientDocker) Run(image, cmd string) error {
-	return dc.run(image, cmd)
-}
-
-func (dc *ClientDocker) run(image, cmd string) error {
-
-	d := new(net.Dialer)
-	x := &http.Transport{
-		DialContext: func(ctx context.Context, net, addr string) (net.Conn, error) {
-			return d.DialContext(ctx, "unix", "/var/run/docker.sock")
-		},
-	}
-
-	dc.Client = &http.Client{Transport: x}
-
-	// CREATE
-	query := url.Values{}
-	query.Set("cmd", "time")
-
-	var req = struct {
-		Cmd          []string
-		Image        string
-		AttachStdout bool
-		AttachStderr bool
-	}{
-		Cmd:          []string{"date"},
-		Image:        "ubuntu",
-		AttachStderr: true,
-		AttachStdout: true,
-	}
-
-	httpReq, err := dc.buildRequest("POST", "/v1.41/containers/create", url.Values{}, req)
-	if err != nil {
-		return err
-	}
-
-	resp, err := dc.Client.Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	var createResp struct {
-		ID string `json:"Id"`
-	}
-	if err := json.Unmarshal(bodyBytes, &createResp); err != nil {
-		return err
-	}
-
-	fmt.Println("[run()]:", createResp)
-	io.Copy(os.Stdout, resp.Body)
-
-	// Exec
-	// TODO: Fix 400: bad request issue
-	httpReq, err = dc.buildRequest("POST", "/v1.41/containers/"+createResp.ID+"/start", url.Values{}, req)
-	if err != nil {
-		return err
-	}
-
-	resp, err = dc.Client.Do(httpReq)
-	if err != nil {
-		return err
-	}
-
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(bodyBytes, &createResp); err != nil {
-		return err
-	}
-	fmt.Println(resp.Body)
-
-	return nil
-
-}
+// }
 
 func (dc *ClientDocker) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
 
@@ -235,21 +126,27 @@ func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req 
 	bbuf := bytes.NewBuffer(buf)
 
 	read, err := json.Marshal(req)
-	bbuf.Write(read)
-
 	if err != nil {
 		return nil, err
 	}
 
+	bbuf.Write(read)
+
 	header := make(http.Header)
 	header.Add("Content-Type", "application/json")
 	httpReq := &http.Request{
-		Method: "POST",
-		URL:    u,
-		Header: header,
-		Body:   ioutil.NopCloser(bbuf),
-		Host:   dc.Host,
-		Proto:  "HTTP/1.1",
+		Method:     "POST",
+		URL:        u,
+		Header:     header,
+		Body:       ioutil.NopCloser(bbuf),
+		Host:       dc.Host,
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+	}
+
+	if bbuf.String() == "{}" {
+		httpReq.Body = nil
 	}
 
 	return httpReq, err
