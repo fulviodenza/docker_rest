@@ -2,10 +2,13 @@ package docker_client
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"strings"
+
+	"github.com/fulviodenza/docker_rest/internal/utils"
 )
 
 // Pull method enables to pull docker images
@@ -18,9 +21,6 @@ func (dc *ClientDocker) Pull(image string) error {
 func (dc *ClientDocker) pull(image string) error {
 
 	refs := strings.Split(image, ":")
-	query := url.Values{}
-	query.Set("fromImage", refs[0])
-	query.Set("tag", refs[1])
 
 	var q = struct {
 		AttachStdout bool
@@ -30,18 +30,31 @@ func (dc *ClientDocker) pull(image string) error {
 		AttachStdout: true,
 	}
 
-	// TODO: The "/v1.41" should be replaced to be dynamic
-	req, err := dc.buildRequest("POST", "/v1.41/images/create", query, q)
+	params := map[string]string{
+		"fromImage": refs[0],
+		"tag":       refs[1],
+	}
+	req, err := dc.buildRequest("POST", "/v1.41/images/create", utils.AddQueryParams(params), q)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	resp, err := dc.doRequest(context.Background(), req)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	io.Copy(os.Stdout, resp.body)
 
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, resp.body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(buf.String())
+	if resp.statusCode < 200 || resp.statusCode > 299 {
+		return errors.New(buf.String())
+	}
 	return err
 }

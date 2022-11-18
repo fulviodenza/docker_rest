@@ -7,6 +7,9 @@ import (
 	"net/url"
 )
 
+// Create, given an image and a cmd, creates
+// a new container with the given Cmd, the given Image
+// and sets AttachStdout and AttachStderr true
 func (dc *ClientDocker) Create(image string, cmd []string) (string, error) {
 	ctx := context.Background()
 	return dc.create(ctx, image, cmd)
@@ -20,14 +23,12 @@ func (dc *ClientDocker) create(ctx context.Context, image string, cmd []string) 
 		AttachStdout bool
 		AttachStderr bool
 	}{
-		// "Cmd\":[\"cat\",\"/proc/loadavg\"],\"Image\":\"ubuntu\"
-		Cmd:          cmd,
+		Cmd:          cmd, // "Cmd\":[\"cat\",\"/proc/loadavg\"],\"Image\":\"ubuntu\"
 		Image:        image,
 		AttachStderr: true,
 		AttachStdout: true,
 	}
 
-	//"Cmd\":[\"cat\",\"/proc/loadavg\"],\"Image\":\"ubuntu\"
 	httpReq, err := dc.buildRequest("POST", "/v1.41/containers/create", url.Values{}, req)
 	if err != nil {
 		return "", err

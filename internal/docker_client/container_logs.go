@@ -3,24 +3,19 @@ package docker_client
 import (
 	"context"
 	"io"
-	"net/url"
 	"os"
+
+	"github.com/fulviodenza/docker_rest/internal/utils"
 )
 
+// Logs shows logs for the container with the given id
 func (dc *ClientDocker) Logs(id string) error {
 	return dc.logs(id)
 }
 
 func (dc *ClientDocker) logs(id string) error {
-	// TODO: utility function to set query parameters
-	query := url.Values{}
-	query.Set("stdout", "1")
-	query.Set("stderr", "1")
-	query.Set("timestamps", "1")
-	query.Set("details", "1")
-	query.Set("follow", "1")
 
-	httpReq, err := dc.buildRequest("GET", "/containers/"+id+"/logs", query, struct{}{})
+	httpReq, err := dc.buildRequest("GET", "/containers/"+id+"/logs", utils.AddQueryParams(utils.ParamsLogs), struct{}{})
 	if err != nil {
 		return err
 	}
@@ -32,5 +27,4 @@ func (dc *ClientDocker) logs(id string) error {
 	io.Copy(os.Stdout, response.body)
 
 	return nil
-
 }

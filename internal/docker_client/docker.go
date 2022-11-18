@@ -22,6 +22,8 @@ type Client interface {
 	Pull(image string) error
 	Start(id, image string) error
 	Logs(id string) error
+	List(ctx context.Context) (Containers, error)
+	// TODO: Add Create when will fully be implemented
 }
 
 type ClientDocker struct {
@@ -43,21 +45,23 @@ type ClientDocker struct {
 
 var _ Client = (*ClientDocker)(nil)
 
-func NewDockerClient() (*ClientDocker, error) {
+// NewDockerClient return a new wrapper of the
+// client connected to the docker unix socket
+// this is created using `DialContext` function
+// with `"unix"` and `"/var/run/docker.sock"`
+// as parameters.
+func NewDockerClient() *ClientDocker {
 
-	client, err := defaultHTTPClient(DefaultDockerHost)
-	if err != nil {
-		return nil, err
-	}
+	client := defaultHTTPClient()
 
 	return &ClientDocker{
 		Host:   DefaultDockerHost,
 		Proto:  defaultProto,
 		Client: client,
-	}, nil
+	}
 }
 
-func defaultHTTPClient(host string) (*http.Client, error) {
+func defaultHTTPClient() *http.Client {
 	d := new(net.Dialer)
 	x := &http.Transport{
 		DialContext: func(ctx context.Context, net, addr string) (net.Conn, error) {
@@ -67,32 +71,8 @@ func defaultHTTPClient(host string) (*http.Client, error) {
 
 	return &http.Client{
 		Transport: x,
-	}, nil
+	}
 }
-
-// func (dc *ClientDocker) Wait(id string, req any) error {
-// 	//"condition=not-running"
-// 	httpReq, err := dc.buildRequest("POST", "/v1.41/containers/"+id+"/wait", url.Values{}, req)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	resp, err := dc.doRequest(ctx, httpReq)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	_, err = ioutil.ReadAll(resp.Body)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if err := json.Unmarshal(bodyBytes, &createResp); err != nil {
-// 		return err
-// 	}
-// 	fmt.Println(resp.Body)
-
-// }
 
 func (dc *ClientDocker) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
 
@@ -135,7 +115,7 @@ func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req 
 	header := make(http.Header)
 	header.Add("Content-Type", "application/json")
 	httpReq := &http.Request{
-		Method:     "POST",
+		Method:     method,
 		URL:        u,
 		Header:     header,
 		Body:       ioutil.NopCloser(bbuf),
