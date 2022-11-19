@@ -63,13 +63,30 @@ func main() {
 
 	c := docker_client.NewDockerClient()
 
-	err = c.Pull(docker_client.UBUNTU_IMAGE)
+	containers, err := c.List(ctx)
 	if err != nil {
-		log.Fatal("[Pull]: error ", err)
+		log.Fatal("[List]: error ", err)
 		panic(err)
 	}
 
+	foundImage := false
+	for _, ct := range containers {
+		if ct.Image == docker_client.UBUNTU_IMAGE {
+			foundImage = true
+		}
+	}
+
+	if !foundImage {
+		log.Println("Image not found, pulling...")
+		err = c.Pull(docker_client.UBUNTU_IMAGE)
+		if err != nil {
+			log.Fatal("[Pull]: error ", err)
+			panic(err)
+		}
+	}
+
 start:
+
 	idContainer, err := c.Create(docker_client.UBUNTU_IMAGE, []string{"cat", "/proc/loadavg"})
 	if err != nil {
 		log.Fatal("[Create]: error ", err)
@@ -78,16 +95,6 @@ start:
 	defer c.Destroy(ctx, idContainer)
 
 	fmt.Println(idContainer)
-
-	containers, err := c.List(ctx)
-	if err != nil {
-		log.Fatal("[List]: error ", err)
-		panic(err)
-	}
-
-	for _, ct := range containers {
-		fmt.Println(ct.ID)
-	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
