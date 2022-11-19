@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type serverResponse struct {
@@ -52,7 +53,7 @@ func NewDockerClient() *ClientDocker {
 
 	return &ClientDocker{
 		Host:   DefaultDockerHost,
-		Proto:  defaultProto,
+		Proto:  DefaultProto,
 		Client: client,
 	}
 }
@@ -67,6 +68,7 @@ func defaultHTTPClient() *http.Client {
 
 	return &http.Client{
 		Transport: x,
+		Timeout:   DefaultTimeout * time.Second,
 	}
 }
 
