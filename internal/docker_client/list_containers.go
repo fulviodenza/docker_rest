@@ -3,6 +3,8 @@ package docker_client
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/fulviodenza/docker_rest/internal/utils"
 )
@@ -25,6 +27,10 @@ func (dc *ClientDocker) list(ctx context.Context) (Containers, error) {
 	}
 
 	containers := Containers{}
+
+	if resp.statusCode < 200 || resp.statusCode > 299 {
+		return Containers{}, errors.New("Got status code: " + fmt.Sprint(resp.statusCode))
+	}
 
 	return containers, json.NewDecoder(resp.body).Decode(&containers)
 }
