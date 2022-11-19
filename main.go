@@ -49,13 +49,14 @@ func main() {
 	}
 	defer watcher.Close()
 
-	err = watcher.Add(interrupt_task_file)
-	if err != nil {
+	if err := watcher.Add(interrupt_task_file); err != nil {
 		log.Fatal("[watcher.Add error]: ", err)
 	}
 
-	ch_kill := make(chan struct{}, 1)
-	ch_interrupt := make(chan struct{}, 1)
+	var (
+		ch_kill      = make(chan struct{}, 1)
+		ch_interrupt = make(chan struct{}, 1)
+	)
 
 	go watch(*watcher, ch_interrupt, ch_kill)
 
@@ -76,8 +77,7 @@ func main() {
 
 	if !foundImage {
 		log.Println("Image not found, pulling...")
-		err = c.Pull(docker_client.UBUNTU_IMAGE)
-		if err != nil {
+		if err := c.Pull(docker_client.UBUNTU_IMAGE); err != nil {
 			log.Fatal("[Pull error]: ", err)
 		}
 	}
@@ -122,11 +122,12 @@ start:
 			// the docker sdk, but the endpoint continued returning 404 while
 			// the same endpoint with the same request works with both docker sdk
 			// and docker cli
-			err = cli.ContainerStart(ctx, idContainer, types.ContainerStartOptions{})
-			if err != nil {
+			if err := cli.ContainerStart(ctx, idContainer, types.ContainerStartOptions{}); err != nil {
 				log.Fatal("[Start error]: ", err)
 			}
-			c.Logs(idContainer)
+			if err := c.Logs(idContainer); err != nil {
+				log.Fatal("[Logs error]: ", err)
+			}
 		}
 	}
 }

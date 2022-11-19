@@ -47,8 +47,7 @@ func (dc *ClientDocker) pull(image string) error {
 	io.Copy(os.Stdout, resp.body)
 
 	buf := new(strings.Builder)
-	_, err = io.Copy(buf, resp.body)
-	if err != nil {
+	if _, err = io.Copy(buf, resp.body); err != nil {
 		return err
 	}
 

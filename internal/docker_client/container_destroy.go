@@ -25,8 +25,7 @@ func (dc *ClientDocker) destroy(ctx context.Context, id string) {
 	}
 
 	buf := new(strings.Builder)
-	_, err = io.Copy(buf, resp.body)
-	if err != nil {
+	if _, err := io.Copy(buf, resp.body); err != nil {
 		return
 	}
 
