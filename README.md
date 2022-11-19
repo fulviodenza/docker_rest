@@ -20,7 +20,7 @@ If you'll run the program, you'll see strange numbers poppin' out, that numbers 
 `cat /proc/loadavg`
 </br>
 
-As said in a stackoverflow question:
+As documentation states:
 
 - The first three fields in this file are load average figures giving the number of jobs in the run queue (state R) or waiting for disk I/O (state D) averaged over 1, 5, and 15 minutes. They are the same as the load average numbers given by uptime(1) and other programs.
 
@@ -28,4 +28,4 @@ As said in a stackoverflow question:
 
 - The fifth field is the PID of the process that was most recently created on the system.
 
-(source [stackoverflow](https://stackoverflow.com/questions/11987495/what-do-the-numbers-in-proc-loadavg-mean-on-linux))
+(source [linux man](https://linux.die.net/man/5/proc))
