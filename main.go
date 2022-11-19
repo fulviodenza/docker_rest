@@ -42,18 +42,16 @@ func main() {
 
 	ctx := context.Background()
 
+	// instantiate watcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal("[fsnotify.NewWatcher()]: error ", err)
-		panic(err)
+		log.Fatal("[fsnotify.NewWatcher() error]: ", err)
 	}
 	defer watcher.Close()
 
-	// Add a path.
 	err = watcher.Add(interrupt_task_file)
 	if err != nil {
-		log.Fatal("[watcher.Add]: error ", err)
-		panic(err)
+		log.Fatal("[watcher.Add error]: ", err)
 	}
 
 	ch_kill := make(chan struct{}, 1)
@@ -61,12 +59,12 @@ func main() {
 
 	go watch(*watcher, ch_interrupt, ch_kill)
 
+	// instantiate docker client
 	c := docker_client.NewDockerClient()
 
 	containers, err := c.List(ctx)
 	if err != nil {
-		log.Fatal("[List]: error ", err)
-		panic(err)
+		log.Fatal("[List error]: ", err)
 	}
 
 	foundImage := false
@@ -80,8 +78,7 @@ func main() {
 		log.Println("Image not found, pulling...")
 		err = c.Pull(docker_client.UBUNTU_IMAGE)
 		if err != nil {
-			log.Fatal("[Pull]: error ", err)
-			panic(err)
+			log.Fatal("[Pull error]: ", err)
 		}
 	}
 
@@ -99,37 +96,35 @@ start:
 	idContainer, err := c.Create(docker_client.UBUNTU_IMAGE, []string{"cat", "/proc/loadavg"})
 	if err != nil {
 		log.Fatal("[Create]: error ", err)
-		panic(err)
 	}
 	defer c.Destroy(ctx, idContainer)
 
 	fmt.Println(idContainer)
 
+	// instantiation of client for start operation
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatal("[client.NewClientWithOpts]: error ", err)
-		panic(err)
 	}
 
-	// var containerID string
 	// The for loop is used to loop endless and at each iteration,
 	// it creates the desidred image and run it using its id.
 	// The loop stops when the container has been deleted
 	// e.g. using the `docker rm -f {id}` command
 	for {
 		select {
-
 		case <-ch_kill:
 			os.Exit(1)
 		case <-ch_interrupt:
 			goto start
 		default:
 			// I know, I have to do it with the rest client and not with
-			// the sdk, but damn, rules are made to be broken, right?
+			// the docker sdk, but the endpoint continued returning 404 while
+			// the same endpoint with the same request works with both docker sdk
+			// and docker cli
 			err = cli.ContainerStart(ctx, idContainer, types.ContainerStartOptions{})
 			if err != nil {
-				log.Fatal("[Start]: error ", err)
-				panic(err)
+				log.Fatal("[Start error]: ", err)
 			}
 			c.Logs(idContainer)
 		}

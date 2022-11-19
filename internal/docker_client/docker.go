@@ -72,24 +72,10 @@ func defaultHTTPClient() *http.Client {
 	}
 }
 
-func (dc *ClientDocker) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
-
-	serverResp := serverResponse{statusCode: -1, reqURL: req.URL}
-
-	req = req.WithContext(ctx)
-	resp, err := dc.Client.Do(req)
-	if err != nil {
-		return serverResp, err
-	}
-	if resp != nil {
-		serverResp.statusCode = resp.StatusCode
-		serverResp.body = resp.Body
-		serverResp.header = resp.Header
-	}
-
-	return serverResp, nil
-}
-
+// buildRequest is the method to build the request starting
+// from a method, a path, a query and a struct{} containing
+// the body of the request. This function should be coupled
+// with doRequest which wraps the Do method of the http.Client
 func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req any) (*http.Request, error) {
 
 	u := &url.URL{
@@ -127,4 +113,26 @@ func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req 
 	}
 
 	return httpReq, err
+}
+
+// doRequest wraps the Do method of the Client wrapped
+// inside the ClientDocker structure. It do the request
+// it gets from buildRequest and returns a serverResponse
+// with a StatuCode, a Body, and a header.
+func (dc *ClientDocker) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
+
+	serverResp := serverResponse{statusCode: -1, reqURL: req.URL}
+
+	req = req.WithContext(ctx)
+	resp, err := dc.Client.Do(req)
+	if err != nil {
+		return serverResp, err
+	}
+	if resp != nil {
+		serverResp.statusCode = resp.StatusCode
+		serverResp.body = resp.Body
+		serverResp.header = resp.Header
+	}
+
+	return serverResp, nil
 }
