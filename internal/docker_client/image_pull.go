@@ -43,7 +43,6 @@ func (dc *ClientDocker) pull(image string) error {
 	if err != nil {
 		return err
 	}
-	resp.body.Close()
 
 	io.Copy(os.Stdout, resp.body)
 

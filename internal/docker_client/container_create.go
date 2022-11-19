@@ -38,7 +38,6 @@ func (dc *ClientDocker) create(ctx context.Context, image string, cmd []string) 
 	if err != nil {
 		return "", err
 	}
-	defer resp.body.Close()
 
 	// Parse the response inside server structure
 	bodyBytes, err := ioutil.ReadAll(resp.body)

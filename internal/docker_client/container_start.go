@@ -2,7 +2,10 @@ package docker_client
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/url"
+	"strings"
 )
 
 // Start Method starts the container with the
@@ -23,7 +26,16 @@ func (dc *ClientDocker) start(image, id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
+
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, resp.body)
+	if err != nil {
+		return err
+	}
+
+	if resp.statusCode < 200 || resp.statusCode > 299 {
+		return errors.New(buf.String())
+	}
 
 	return nil
 }

@@ -24,7 +24,6 @@ func (dc *ClientDocker) logs(id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
 
 	io.Copy(os.Stdout, resp.body)
 
