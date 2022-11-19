@@ -2,7 +2,10 @@ module github.com/fulviodenza/docker_rest
 
 go 1.18
 
-require github.com/docker/docker v20.10.21+incompatible
+require (
+	github.com/docker/docker v20.10.21+incompatible
+	github.com/fsnotify/fsnotify v1.6.0
+)
 
 require (
 	github.com/google/go-cmp v0.5.9 // indirect

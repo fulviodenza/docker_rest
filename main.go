@@ -9,12 +9,14 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/fsnotify/fsnotify"
 	"github.com/fulviodenza/docker_rest/internal/docker_client"
 )
 
 const UBUNTU_IMAGE = "ubuntu"
+const interrupt_task_file = "./tmp/interrupt_task.txt"
 
-func init() {
+func watch(watcher fsnotify.Watcher) chan struct{} {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -22,6 +24,17 @@ func init() {
 			recover()
 		}
 	}()
+
+	for {
+		select {
+		case event := <-watcher.Events:
+			log.Println("event:", event)
+			os.Exit(1)
+		case err := <-watcher.Errors:
+			log.Println("error:", err)
+			os.Exit(1)
+		}
+	}
 }
 
 func recover() {
@@ -31,9 +44,25 @@ func recover() {
 func main() {
 
 	ctx := context.Background()
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal("[fsnotify.NewWatcher()]: error ", err)
+		panic(err)
+	}
+	defer watcher.Close()
+
+	// Add a path.
+	err = watcher.Add(interrupt_task_file)
+	if err != nil {
+		log.Fatal("[watcher.Add]: error ", err)
+		panic(err)
+	}
+	go watch(*watcher)
+
 	c := docker_client.NewDockerClient()
 
-	err := c.Pull(UBUNTU_IMAGE + ":latest")
+	err = c.Pull(UBUNTU_IMAGE + ":latest")
 	if err != nil {
 		log.Fatal("[Pull]: error ", err)
 		panic(err)
