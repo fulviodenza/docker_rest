@@ -3,7 +3,6 @@ package docker_client
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/url"
 )
 
@@ -39,18 +38,10 @@ func (dc *ClientDocker) create(ctx context.Context, image string, cmd []string) 
 		return "", err
 	}
 
-	// Parse the response inside server structure
-	bodyBytes, err := ioutil.ReadAll(resp.body)
-	if err != nil {
-		return "", err
-	}
-
 	var respP struct {
 		Id string `json:"Id"`
 	}
-	if err := json.Unmarshal(bodyBytes, &respP); err != nil {
-		return "", err
-	}
+	json.NewDecoder(resp.body).Decode(&respP)
 
 	return respP.Id, nil
 }

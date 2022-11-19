@@ -1,11 +1,12 @@
 package docker_client
 
 import (
+	"context"
 	"net/http"
 	"testing"
 )
 
-func TestClientDocker_Create(t *testing.T) {
+func TestClientDocker_reate(t *testing.T) {
 	type fields struct {
 		Scheme            string
 		Host              string
@@ -53,6 +54,17 @@ func TestClientDocker_Create(t *testing.T) {
 				return
 			}
 			if got == "" {
+				t.Errorf("ClientDocker.Create() = %v not empty", got)
+			}
+
+			exists := false
+			containers, err := dc.list(context.TODO())
+			for _, c := range containers {
+				if c.ID == got {
+					exists = true
+				}
+			}
+			if !exists && (err == nil) {
 				t.Errorf("ClientDocker.Create() = %v not empty", got)
 			}
 		})
