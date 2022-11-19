@@ -20,8 +20,6 @@ func (dc *ClientDocker) Pull(image string) error {
 // composes a pull request over the socket
 func (dc *ClientDocker) pull(image string) error {
 
-	refs := strings.Split(image, ":")
-
 	var q = struct {
 		AttachStdout bool
 		AttachStderr bool
@@ -30,10 +28,12 @@ func (dc *ClientDocker) pull(image string) error {
 		AttachStdout: true,
 	}
 
+	refs := strings.Split(image, ":")
 	params := map[string]string{
 		"fromImage": refs[0],
 		"tag":       refs[1],
 	}
+
 	req, err := dc.buildRequest("POST", "/v1.41/images/create", utils.AddQueryParams(params), q)
 	if err != nil {
 		return err
@@ -43,6 +43,7 @@ func (dc *ClientDocker) pull(image string) error {
 	if err != nil {
 		return err
 	}
+	resp.body.Close()
 
 	io.Copy(os.Stdout, resp.body)
 
@@ -56,5 +57,6 @@ func (dc *ClientDocker) pull(image string) error {
 	if resp.statusCode < 200 || resp.statusCode > 299 {
 		return errors.New(buf.String())
 	}
+
 	return err
 }

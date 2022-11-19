@@ -23,8 +23,8 @@ func (dc *ClientDocker) create(ctx context.Context, image string, cmd []string) 
 		AttachStdout bool
 		AttachStderr bool
 	}{
-		Cmd:          cmd, // "Cmd\":[\"cat\",\"/proc/loadavg\"],\"Image\":\"ubuntu\"
-		Image:        image,
+		Cmd:          cmd,   // "Cmd\":[\"cat\",\"/proc/loadavg\"]
+		Image:        image, // "Image\":\"ubuntu\"
 		AttachStderr: true,
 		AttachStdout: true,
 	}

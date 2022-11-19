@@ -29,7 +29,7 @@ const (
 )
 ```
 
-## type [Client](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L21-L26>)
+## type [Client](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L21-L27>)
 
 ```go
 type Client interface {
@@ -40,28 +40,24 @@ type Client interface {
 }
 ```
 
-## type [ClientDocker](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L28-L43>)
+## type [ClientDocker](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L29-L40>)
 
 ```go
 type ClientDocker struct {
-    // scheme sets the scheme for the client
+    // scheme sets the scheme for the client, i.e. http
     Scheme string
-    // host holds the server address to connect to
+    // host holds the server address to connect to, i.e. docker.sock
     Host string
     // proto holds the client protocol i.e. unix.
     Proto string
-    // addr holds the client address.
-    Addr string
     // basePath holds the path to prepend to the requests.
     BasePath string
     // client used to send and receive http requests.
     Client *http.Client
-    // custom http headers configured by users.
-    CustomHTTPHeaders map[string]string
 }
 ```
 
-### func [NewDockerClient](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L52>)
+### func [NewDockerClient](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L49>)
 
 ```go
 func NewDockerClient() *ClientDocker
@@ -93,7 +89,7 @@ func (dc *ClientDocker) Logs(id string) error
 
 Logs shows logs for the container with the given id
 
-### func \(\*ClientDocker\) [Pull](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/image_pull.go#L14>)
+### func \(\*ClientDocker\) [Pull](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/image_pull.go#L16>)
 
 ```go
 func (dc *ClientDocker) Pull(image string) error

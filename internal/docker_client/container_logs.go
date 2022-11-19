@@ -20,11 +20,13 @@ func (dc *ClientDocker) logs(id string) error {
 		return err
 	}
 
-	response, err := dc.doRequest(context.Background(), httpReq)
+	resp, err := dc.doRequest(context.Background(), httpReq)
 	if err != nil {
 		return err
 	}
-	io.Copy(os.Stdout, response.body)
+	defer resp.body.Close()
+
+	io.Copy(os.Stdout, resp.body)
 
 	return nil
 }

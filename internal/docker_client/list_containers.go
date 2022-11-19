@@ -23,6 +23,7 @@ func (dc *ClientDocker) list(ctx context.Context) (Containers, error) {
 	if err != nil {
 		return nil, err
 	}
+	resp.body.Close()
 
 	containers := Containers{}
 

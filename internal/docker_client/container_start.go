@@ -19,11 +19,11 @@ func (dc *ClientDocker) start(image, id string) error {
 		return err
 	}
 
-	response, err := dc.doRequest(context.Background(), httpReq)
+	resp, err := dc.doRequest(context.Background(), httpReq)
 	if err != nil {
 		return err
 	}
-	defer response.body.Close()
+	defer resp.body.Close()
 
 	return nil
 }

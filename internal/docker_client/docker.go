@@ -27,20 +27,16 @@ type Client interface {
 }
 
 type ClientDocker struct {
-	// scheme sets the scheme for the client
+	// scheme sets the scheme for the client, i.e. http
 	Scheme string
-	// host holds the server address to connect to
+	// host holds the server address to connect to, i.e. docker.sock
 	Host string
 	// proto holds the client protocol i.e. unix.
 	Proto string
-	// addr holds the client address.
-	Addr string
 	// basePath holds the path to prepend to the requests.
 	BasePath string
 	// client used to send and receive http requests.
 	Client *http.Client
-	// custom http headers configured by users.
-	CustomHTTPHeaders map[string]string
 }
 
 var _ Client = (*ClientDocker)(nil)
@@ -79,17 +75,16 @@ func (dc *ClientDocker) doRequest(ctx context.Context, req *http.Request) (serve
 	serverResp := serverResponse{statusCode: -1, reqURL: req.URL}
 
 	req = req.WithContext(ctx)
-
 	resp, err := dc.Client.Do(req)
 	if err != nil {
 		return serverResp, err
 	}
-
 	if resp != nil {
 		serverResp.statusCode = resp.StatusCode
 		serverResp.body = resp.Body
 		serverResp.header = resp.Header
 	}
+
 	return serverResp, nil
 }
 

@@ -10,7 +10,6 @@ func TestClientDocker_Create(t *testing.T) {
 		Scheme            string
 		Host              string
 		Proto             string
-		Addr              string
 		BasePath          string
 		Client            *http.Client
 		CustomHTTPHeaders map[string]string
@@ -42,13 +41,11 @@ func TestClientDocker_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dc := &ClientDocker{
-				Scheme:            tt.fields.Scheme,
-				Host:              tt.fields.Host,
-				Proto:             tt.fields.Proto,
-				Addr:              tt.fields.Addr,
-				BasePath:          tt.fields.BasePath,
-				Client:            tt.fields.Client,
-				CustomHTTPHeaders: tt.fields.CustomHTTPHeaders,
+				Scheme:   tt.fields.Scheme,
+				Host:     tt.fields.Host,
+				Proto:    tt.fields.Proto,
+				BasePath: tt.fields.BasePath,
+				Client:   tt.fields.Client,
 			}
 			got, err := dc.Create(tt.args.image, tt.args.cmd)
 			if (err != nil) != tt.wantErr {
