@@ -19,8 +19,6 @@ func watch(watcher fsnotify.Watcher, ch_interrupt, ch_exit chan struct{}) chan s
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		// When I receive something on the c channe,
-		// recover the main function
 		for range c {
 			ch_interrupt <- struct{}{}
 		}
@@ -39,6 +37,11 @@ func watch(watcher fsnotify.Watcher, ch_interrupt, ch_exit chan struct{}) chan s
 }
 
 func main() {
+
+	image := docker_client.UBUNTU_IMAGE
+	if len(os.Args) > 1 {
+		image = os.Args[1]
+	}
 
 	ctx := context.Background()
 
@@ -70,14 +73,14 @@ func main() {
 
 	foundImage := false
 	for _, ct := range containers {
-		if ct.Image == docker_client.UBUNTU_IMAGE {
+		if ct.Image == image {
 			foundImage = true
 		}
 	}
 
 	if !foundImage {
 		log.Println("Image not found, pulling...")
-		if err := c.Pull(docker_client.UBUNTU_IMAGE); err != nil {
+		if err := c.Pull(image); err != nil {
 			log.Fatal("[Pull error]: ", err)
 		}
 	}
@@ -93,7 +96,7 @@ start:
 	// The value after the slash is the number of kernel scheduling entities
 	// that currently exist on the system. The fifth field is the PID of the process
 	// that was most recently created on the system.
-	idContainer, err := c.Create(docker_client.UBUNTU_IMAGE, []string{"cat", "/proc/loadavg"})
+	idContainer, err := c.Create(image, []string{"cat", "/proc/loadavg"})
 	if err != nil {
 		log.Fatal("[Create]: error ", err)
 	}
@@ -113,8 +116,12 @@ start:
 	// e.g. using the `docker rm -f {id}` command
 	for {
 		select {
+		// When I receive something on the ch_kill channel,
+		// recover the main function
 		case <-ch_kill:
 			os.Exit(1)
+		// When I receive something on the ch_interrupt channel,
+		// recover the main function
 		case <-ch_interrupt:
 			goto start
 		default:
