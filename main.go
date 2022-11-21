@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/fsnotify/fsnotify"
 	"github.com/fulviodenza/docker_rest/internal/docker_client"
 )
@@ -104,12 +102,6 @@ start:
 
 	fmt.Println(idContainer)
 
-	// instantiation of client for start operation
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Fatal("[client.NewClientWithOpts]: error ", err)
-	}
-
 	// The for loop is used to loop endless and at each iteration,
 	// it creates the desidred image and run it using its id.
 	// The loop stops when the container has been deleted
@@ -125,11 +117,7 @@ start:
 		case <-ch_interrupt:
 			goto start
 		default:
-			// I know, I have to do it with the rest client and not with
-			// the docker sdk, but the endpoint continued returning 404 while
-			// the same endpoint with the same request works with both docker sdk
-			// and docker cli
-			if err := cli.ContainerStart(ctx, idContainer, types.ContainerStartOptions{}); err != nil {
+			if err := c.Start(idContainer); err != nil {
 				log.Fatal("[Start error]: ", err)
 			}
 			if err := c.Logs(idContainer); err != nil {

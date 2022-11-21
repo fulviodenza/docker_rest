@@ -21,10 +21,9 @@ type serverResponse struct {
 
 type Client interface {
 	Pull(image string) error
-	Start(id, image string) error
+	Start(id string) error
 	Logs(id string) error
 	List(ctx context.Context) (Containers, error)
-	// TODO: Add Create when will fully be implemented
 }
 
 type ClientDocker struct {
