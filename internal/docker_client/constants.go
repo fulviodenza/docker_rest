@@ -5,5 +5,6 @@ const (
 	DefaultDockerHost = "docker.sock"
 	DefaultProto      = "HTTP/1.1"
 	DefaultAddr       = "docker.sock"
+	DefaultScheme     = "http"
 	DefaultTimeout    = 10
 )

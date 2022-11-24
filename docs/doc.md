@@ -13,10 +13,11 @@ import "github.com/fulviodenza/docker_rest/internal/docker_client"
 - [type ClientDocker](<#type-clientdocker>)
   - [func NewDockerClient() *ClientDocker](<#func-newdockerclient>)
   - [func (dc *ClientDocker) Create(image string, cmd []string) (string, error)](<#func-clientdocker-create>)
+  - [func (dc *ClientDocker) Destroy(ctx context.Context, id string)](<#func-clientdocker-destroy>)
   - [func (dc *ClientDocker) List(ctx context.Context) (Containers, error)](<#func-clientdocker-list>)
   - [func (dc *ClientDocker) Logs(id string) error](<#func-clientdocker-logs>)
   - [func (dc *ClientDocker) Pull(image string) error](<#func-clientdocker-pull>)
-  - [func (dc *ClientDocker) Start(id, image string) error](<#func-clientdocker-start>)
+  - [func (dc *ClientDocker) Start(id string) error](<#func-clientdocker-start>)
 - [type Containers](<#type-containers>)
 
 
@@ -26,21 +27,30 @@ import "github.com/fulviodenza/docker_rest/internal/docker_client"
 const (
     UBUNTU_IMAGE      = "ubuntu:latest"
     DefaultDockerHost = "docker.sock"
+    DefaultProto      = "HTTP/1.1"
+    DefaultAddr       = "docker.sock"
+    DefaultTimeout    = 10
 )
 ```
 
-## type [Client](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L21-L27>)
+## type [Client](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L23-L30>)
+
+Client is the interface to execute main operation towards the docker daemon.
 
 ```go
 type Client interface {
-    Pull(image string) error
-    Start(id, image string) error
-    Logs(id string) error
     List(ctx context.Context) (Containers, error)
+    Pull(image string) error
+    Create(image string, cmd []string) (string, error)
+    Start(id string) error
+    Logs(id string) error
+    Destroy(ctx context.Context, id string)
 }
 ```
 
-## type [ClientDocker](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L29-L40>)
+## type [ClientDocker](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L35-L44>)
+
+ClientDocker is the structure which wraps the http client and contains specification for executing the request, for example the Scheme, the Host and the Proto.
 
 ```go
 type ClientDocker struct {
@@ -50,14 +60,12 @@ type ClientDocker struct {
     Host string
     // proto holds the client protocol i.e. unix.
     Proto string
-    // basePath holds the path to prepend to the requests.
-    BasePath string
     // client used to send and receive http requests.
     Client *http.Client
 }
 ```
 
-### func [NewDockerClient](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L49>)
+### func [NewDockerClient](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/docker.go#L53>)
 
 ```go
 func NewDockerClient() *ClientDocker
@@ -65,7 +73,7 @@ func NewDockerClient() *ClientDocker
 
 NewDockerClient return a new wrapper of the client connected to the docker unix socket this is created using \`DialContext\` function with \`"unix"\` and \`"/var/run/docker.sock"\` as parameters.
 
-### func \(\*ClientDocker\) [Create](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/container_create.go#L13>)
+### func \(\*ClientDocker\) [Create](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/container_create.go#L12>)
 
 ```go
 func (dc *ClientDocker) Create(image string, cmd []string) (string, error)
@@ -73,7 +81,15 @@ func (dc *ClientDocker) Create(image string, cmd []string) (string, error)
 
 Create, given an image and a cmd, creates a new container with the given Cmd, the given Image and sets AttachStdout and AttachStderr true
 
-### func \(\*ClientDocker\) [List](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/list_containers.go#L11>)
+### func \(\*ClientDocker\) [Destroy](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/container_destroy.go#L13>)
+
+```go
+func (dc *ClientDocker) Destroy(ctx context.Context, id string)
+```
+
+Destroy destroys the container with the given id.
+
+### func \(\*ClientDocker\) [List](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/list_containers.go#L13>)
 
 ```go
 func (dc *ClientDocker) List(ctx context.Context) (Containers, error)
@@ -97,10 +113,10 @@ func (dc *ClientDocker) Pull(image string) error
 
 Pull method enables to pull docker images specified as "image:tag", for example "ubuntu:latest"
 
-### func \(\*ClientDocker\) [Start](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/container_start.go#L11>)
+### func \(\*ClientDocker\) [Start](<https://github.com/fulviodenza/vmware-assignment/blob/main/internal/docker_client/container_start.go#L14>)
 
 ```go
-func (dc *ClientDocker) Start(id, image string) error
+func (dc *ClientDocker) Start(id string) error
 ```
 
 Start Method starts the container with the given id and image. Returns an error if the path to the container is not correct.

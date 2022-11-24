@@ -9,6 +9,7 @@ import (
 	"github.com/fulviodenza/docker_rest/internal/utils"
 )
 
+// Destroy destroys the container with the given id.
 func (dc *ClientDocker) Destroy(ctx context.Context, id string) {
 	dc.destroy(ctx, id)
 }

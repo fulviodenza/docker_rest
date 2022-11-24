@@ -67,11 +67,10 @@ func TestClientDocker_pull(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dc := &ClientDocker{
-				Scheme:   tt.fields.Scheme,
-				Host:     tt.fields.Host,
-				Proto:    tt.fields.Proto,
-				BasePath: tt.fields.BasePath,
-				Client:   tt.fields.Client,
+				Scheme: tt.fields.Scheme,
+				Host:   tt.fields.Host,
+				Proto:  tt.fields.Proto,
+				Client: tt.fields.Client,
 			}
 			if err := dc.pull(tt.args.image); (err != nil) != tt.wantErr {
 				t.Errorf("ClientDocker.pull() error = %v, wantErr %v", err, tt.wantErr)

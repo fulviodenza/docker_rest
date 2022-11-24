@@ -18,13 +18,20 @@ type serverResponse struct {
 	reqURL     *url.URL
 }
 
+// Client is the interface to execute main operation
+// towards the docker daemon.
 type Client interface {
+	List(ctx context.Context) (Containers, error)
 	Pull(image string) error
+	Create(image string, cmd []string) (string, error)
 	Start(id string) error
 	Logs(id string) error
-	List(ctx context.Context) (Containers, error)
+	Destroy(ctx context.Context, id string)
 }
 
+// ClientDocker is the structure which wraps the http client
+// and contains specification for executing the request, for example
+// the Scheme, the Host and the Proto.
 type ClientDocker struct {
 	// scheme sets the scheme for the client, i.e. http
 	Scheme string
@@ -32,8 +39,6 @@ type ClientDocker struct {
 	Host string
 	// proto holds the client protocol i.e. unix.
 	Proto string
-	// basePath holds the path to prepend to the requests.
-	BasePath string
 	// client used to send and receive http requests.
 	Client *http.Client
 }
@@ -52,6 +57,7 @@ func NewDockerClient() *ClientDocker {
 	return &ClientDocker{
 		Host:   DefaultDockerHost,
 		Proto:  DefaultProto,
+		Scheme: DefaultScheme,
 		Client: client,
 	}
 }
@@ -77,7 +83,7 @@ func defaultHTTPClient() *http.Client {
 func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req any) (*http.Request, error) {
 
 	u := &url.URL{
-		Scheme:   "http",
+		Scheme:   dc.Scheme,
 		Host:     dc.Host,
 		Path:     path,
 		RawQuery: query.Encode(),
@@ -101,7 +107,7 @@ func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req 
 		Header:     header,
 		Body:       io.NopCloser(bbuf),
 		Host:       dc.Host,
-		Proto:      "HTTP/1.1",
+		Proto:      dc.Proto,
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 	}
