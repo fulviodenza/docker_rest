@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -100,7 +99,7 @@ func (dc *ClientDocker) buildRequest(method, path string, query url.Values, req 
 		Method:     method,
 		URL:        u,
 		Header:     header,
-		Body:       ioutil.NopCloser(bbuf),
+		Body:       io.NopCloser(bbuf),
 		Host:       dc.Host,
 		Proto:      "HTTP/1.1",
 		ProtoMajor: 1,
